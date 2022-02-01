@@ -18,6 +18,7 @@ class ES:
         maxIt: maxiumum amount of iterations - default 10000
         p: population of exploration, int - default 50
     """
+
     def __init__(self, sigma, alpha, model, solution, maxIt=10000, p=50):
         self.maxIt = maxIt
         self.size = len(solution)
@@ -59,6 +60,6 @@ class ES:
 
 
 if __name__ == '__main__':
-    sol = np.array([3,1,2,3])
+    sol = np.array([3, 1, 2, 3])
     es = ES(sigma=0.1, alpha=0.001, model=0, solution=sol)
     es.train()
