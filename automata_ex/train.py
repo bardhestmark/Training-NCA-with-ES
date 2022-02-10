@@ -1,16 +1,12 @@
-
 import argparse
 import pathlib
-
 import numpy as np
 import torch
 import torch.nn as nn
 from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
 from model import CAModel
-
 
 def load_image(path, size=40):
     """Load an image.
