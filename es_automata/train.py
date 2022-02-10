@@ -234,17 +234,12 @@ def es_step(x, mother_vector):
   pop = torch.rand(POPULATION_SIZE, n_params, device=device)
   # Get fitness for population and their population weights
   fitness, pop_weights = batch_calculate_population_fitness(x, pop, mother_vector)
-  # Stitch together fitness to population weights tensors
-  fitness_weights = zip(fitness, pop_weights)
-  # Sort with on fitness as key
-  fitness_weights = sorted(fitness_weights, key = lambda x: x[0], reverse = True)
-  # Unwrap the list
-  fitness, pop_weights = zip(*fitness_weights)
-  pop_weights = torch.stack(pop_weights)
-  fitness = torch.stack(fitness)
   # Take top n fitness scores and weights
-  F = (fitness[:TOP_N]-torch.mean(fitness[:TOP_N])) / (torch.std(fitness[:TOP_N]) + np.finfo(float).eps)
-  P = pop_weights[:TOP_N]
+  top_n_indices = torch.topk(fitness, TOP_N).indices
+  F = fitness[top_n_indices]
+  P = pop_weights[top_n_indices]
+  # Normalize fitness
+  F = (F-torch.mean(F)) / (torch.std(F) + np.finfo(float).eps)
   # Update model parameters
   mother_vector += (LR / (TOP_N*ERROR_WEIGHT*SIGMA)) * torch.matmul(P.t(), F)
   # Decay error weight
