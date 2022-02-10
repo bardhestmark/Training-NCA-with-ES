@@ -108,11 +108,13 @@ def drawfunc(img):
   arr[..., 1] = img_[1]
   arr[..., 2] = img_[2]
   return arr
-  
+
+
+# TODO print parameters out
 # Misc
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 logdir = 'logs'
-img = '/home/brd/Programming/thesis/IDATT2900-45b/es_automata/rabbit.png'
+img = 'rabbit.png'
 padding = 1
 size = 40
 batch_size = 1 # default 8
@@ -123,9 +125,13 @@ eval_frequency = 50 # default 500
 eval_iterations = 30 # default 300
 
 # Hyperparameters
-SIGMA = 0.01
+SIGMA = 1.5
 LR = 0.01
-POPULATION_SIZE= 50
+MIN_ERROR_WEIGHT = 0.01
+ERROR_WEIGHT = 1
+DECAY_RATE = 0.95
+POPULATION_SIZE= 150
+TOP_N = 50
 
 # Logs
 log_path = pathlib.Path(logdir)
@@ -143,7 +149,6 @@ writer.add_image("ground truth", to_rgb(target_img_)[0])
 
 # Model and optimizer
 model = CAModel(n_channels=n_channels, device=device)
-#optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
 
 #@title ES Module { run: "auto", form-width: "20%" }
 
@@ -196,7 +201,7 @@ def jitter(mother_params, state_dict):
       numpy.ndarray
           Shape(8320)
       """
-  params_try = mother_params + SIGMA*state_dict
+  params_try = mother_params + ERROR_WEIGHT*SIGMA*state_dict
   return params_try
 
 # now, we calculate the fitness of entire population
@@ -216,22 +221,37 @@ def batch_calculate_population_fitness(x, pop, mother_vector):
           dtype=float with shape (POPULATION_SIZE)
       """
   fitness = torch.zeros(pop.shape[0], device=device)
+  pop_weights = torch.zeros((pop.shape[0], pop.shape[1]), device=device)
   for i, params in enumerate(pop):
     p_try = jitter(mother_vector, params)
+    pop_weights[i] = p_try
     fitness[i] = batch_fitness_func(x, p_try)
-  return fitness
+  return fitness, pop_weights
 
 def es_step(x, mother_vector):
-    pop = torch.rand(POPULATION_SIZE, n_params, device=device)
-    fitness = batch_calculate_population_fitness(x, pop, mother_vector)
-    # normalize the fitness
-    # add float epsilon to prevent division by 0
-    normalized_fitness = (fitness - torch.mean(fitness)) / (torch.std(fitness)+np.finfo(float).eps) 
-    # update mother vector with the fitness values
-    mother_vector += (LR / (POPULATION_SIZE * SIGMA)) * torch.matmul(pop.t(), normalized_fitness)
-    if torch.nan in mother_vector:
-      raise Exception('Values in mother_vector were torch.nan')
-    return mother_vector
+  global ERROR_WEIGHT
+  # Create population in N(0, 1)
+  pop = torch.rand(POPULATION_SIZE, n_params, device=device)
+  # Get fitness for population and their population weights
+  fitness, pop_weights = batch_calculate_population_fitness(x, pop, mother_vector)
+  # Stitch together fitness to population weights tensors
+  fitness_weights = zip(fitness, pop_weights)
+  # Sort with on fitness as key
+  fitness_weights = sorted(fitness_weights, key = lambda x: x[0], reverse = True)
+  # Unwrap the list
+  fitness, pop_weights = zip(*fitness_weights)
+  pop_weights = torch.stack(pop_weights)
+  fitness = torch.stack(fitness)
+  # Take top n fitness scores and weights
+  F = (fitness[:TOP_N]-torch.mean(fitness[:TOP_N])) / (torch.std(fitness[:TOP_N]) + np.finfo(float).eps)
+  P = pop_weights[:TOP_N]
+  # Update model parameters
+  mother_vector += (LR / (TOP_N*ERROR_WEIGHT*SIGMA)) * torch.matmul(P.t(), F)
+  # Decay error weight
+  ERROR_WEIGHT = max(ERROR_WEIGHT * DECAY_RATE, MIN_ERROR_WEIGHT)
+  if torch.nan in mother_vector:
+    raise Exception('Values in mother_vector were torch.nan')
+  return mother_vector
 
 
 #@title {vertical-output:true}
@@ -246,36 +266,12 @@ seed = make_seed(size, n_channels).to(device)
 seed = nn.functional.pad(seed, (p, p, p, p), "constant", 0)
 pool = seed.clone().repeat(pool_size, 1, 1, 1)
 
-#@title Animation { vertical-output: true, form-width: "40%" }
-# comment out to not skip
 
-import matplotlib.animation as animation
-from matplotlib import rc
-rc('animation', html='jshtml')
-
-fig, ax = plt.subplots()
-
-ims = []
-x = pool[0:1]
-for i in range(100):
-          if i == 0:
-            ims.append([ax.imshow(drawfunc(x[:,:4,...].detach().cpu()))])
-          x = model(x)
-          im = drawfunc(x[:,:4,...].detach().cpu())  
-          im = ax.imshow(im)
-          ims.append([im])
-            
-          
-ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
-                                repeat_delay=1000)
-plt.show()
 
 model = CAModel(n_channels=n_channels, device=device)
 mother_vector = nn.utils.parameters_to_vector(model.parameters())
-mother_vector
 
 loss_log = []
-# TODO debug, loss is getting lower until nan when it should be higher https://towardsdatascience.com/introduction-to-evolution-strategy-1b78b9d48385
 with torch.no_grad():
   for it in tqdm(range(n_batches)):
       # testing with pool size and batch size equals 1
@@ -292,8 +288,8 @@ with torch.no_grad():
       # calculate fitness of new mother vector and set mother vec
       loss = batch_fitness_func(x, mother_vector)
       
-      loss_log.append(loss)
-      if it % 30 == 0:
+      loss_log.append(loss.detach().cpu())
+      if it % 50 == 0:
         #output.clear()
         plt.plot(loss_log, '.',  alpha=0.3)
         plt.yscale('log')
@@ -331,3 +327,29 @@ with torch.no_grad():
 """if __name__ == "__main__":
     main()
 """
+
+# @title Animation { vertical-output: true, form-width: "40%" }
+# comment out to not skip
+
+import matplotlib.animation as animation
+from matplotlib import rc
+
+rc('animation', html='jshtml')
+model.training = False
+fig, ax = plt.subplots()
+
+ims = []
+x = pool[0:1]
+for i in range(100):
+    if i == 0:
+        ims.append([ax.imshow(drawfunc(x[:, :4, ...].detach().cpu()))])
+    x = model(x)
+    im = drawfunc(x[:, :4, ...].detach().cpu())
+    im = ax.imshow(im)
+    ims.append([im])
+
+ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
+                                repeat_delay=1000)
+f = r"./animation.mp4"
+writervideo = animation.FFMpegWriter(fps=60)
+ani.save(f, writer=writervideo)
