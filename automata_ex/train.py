@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+import time
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,6 +8,10 @@ from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from model import CAModel
+import io
+import os
+import requests
+import unicodedata
 
 def load_image(path, size=40):
     """Load an image.
@@ -28,6 +33,18 @@ def load_image(path, size=40):
     img = np.float32(img) / 255.0
     img[..., :3] *= img[..., 3:]
 
+    return torch.from_numpy(img).permute(2, 0, 1)[None, ...]
+
+
+def load_emoji(emoji_code, img_size):
+    """Loads image of emoji with code 'emoji' from google's emojirepository"""
+    emoji_code = hex(ord(emoji_code))[2:].lower()
+    url = 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/128/emoji_u%s.png' % emoji_code
+    req = requests.get(url)
+    img = Image.open(io.BytesIO(req.content))
+    img.thumbnail((img_size, img_size), Image.ANTIALIAS)
+    img = np.float64(img) / 255.0
+    img[..., :3] *= img[..., 3:]
     return torch.from_numpy(img).permute(2, 0, 1)[None, ...]
 
 
@@ -71,7 +88,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
             description="Training script for the Celluar Automata"
     )
-    parser.add_argument("img", type=str, help="Path to the image we want to reproduce")
+    parser.add_argument("-img","--img", type=str, default="rabbit.png", help="Path to the image we want to reproduce")
 
     parser.add_argument(
             "-b",
@@ -127,7 +144,7 @@ def main(argv=None):
             "-p",
             "--padding",
             type=int,
-            default=16,
+            default=0,
             help="Padding. The shape after padding is (h + 2 * p, w + 2 * p).",
     )
     parser.add_argument(
@@ -140,22 +157,41 @@ def main(argv=None):
             "-s",
             "--size",
             type=int,
-            default=40,
+            default=9,
             help="Image size",
     )
+
+    parser.add_argument(
+            "-hch",
+            "--hidden-channels",
+            type=int,
+            default=32,
+            help="Number of hidden channels"
+    )
+
     # Parse arguments
     args = parser.parse_args()
     print(vars(args))
+    args.img = "🐰"
+    args.mode = "train"
+    if not os.path.isdir(args.logdir):
+        raise Exception("Logging directory '%s' not found in base folder" % args.logdir)
+
+    args.logdir = "%s/%s-%s_%s" % (args.logdir, unicodedata.name(args.img), args.mode, time.strftime("%d-%m-%Y_%H:%M:%S"))
+    os.mkdir(args.logdir)
+    os.mkdir(args.logdir + "/models")
+    os.mkdir(args.logdir + "/pic")
 
     # Misc
     device = torch.device(args.device)
-
+    
     log_path = pathlib.Path(args.logdir)
     log_path.mkdir(parents=True, exist_ok=True)
     writer = SummaryWriter(log_path)
 
     # Target image
-    target_img_ = load_image(args.img, size=args.size)
+    #target_img_ = load_image(args.img, size=args.size)
+    target_img_ = load_emoji("🐰", args.size)
     p = args.padding
     target_img_ = nn.functional.pad(target_img_, (p, p, p, p), "constant", 0)
     target_img = target_img_.to(device)
@@ -164,7 +200,7 @@ def main(argv=None):
     writer.add_image("ground truth", to_rgb(target_img_)[0])
 
     # Model and optimizer
-    model = CAModel(n_channels=args.n_channels, device=device)
+    model = CAModel(n_channels=args.n_channels, hidden_channels=args.hidden_channels, device=device)
     optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
 
     # Pool initialization
@@ -178,7 +214,7 @@ def main(argv=None):
         ).tolist()
 
         x = pool[batch_ixs]
-        for i in range(np.random.randint(64, 96)):
+        for i in range(np.random.randint(30, 40)):
             x = model(x)
 
         loss_batch = ((target_img - x[:, :4, ...]) ** 2).mean(dim=[1, 2, 3])
@@ -187,7 +223,7 @@ def main(argv=None):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        writer.add_scalar("train/loss", loss, it)
+        writer.add_scalar("train/loss", -loss, it)
 
         argmax_batch = loss_batch.argmax().item()
         argmax_pool = batch_ixs[argmax_batch]
