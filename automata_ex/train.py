@@ -63,6 +63,8 @@ def to_rgb(img_rgba):
     rgb, a = img_rgba[:, :3, ...], torch.clamp(img_rgba[:, 3:, ...], 0, 1)
     return torch.clamp(1.0 - a + rgb, 0, 1)
 
+def save_model(PATH, model):
+    torch.save(model.state_dict(), PATH)
 
 def make_seed(size, n_channels):
     """Create a starting tensor for training.
@@ -123,7 +125,7 @@ def main(argv=None):
             "-n",
             "--n-batches",
             type=int,
-            default=5000,
+            default=10000,
             help="Number of batches to train for.",
     )
     parser.add_argument(
@@ -177,11 +179,11 @@ def main(argv=None):
     if not os.path.isdir(args.logdir):
         raise Exception("Logging directory '%s' not found in base folder" % args.logdir)
 
-    args.logdir = "%s/%s-%s_%s" % (args.logdir, unicodedata.name(args.img), args.mode, time.strftime("%d-%m-%Y_%H:%M:%S"))
+    args.logdir = "%s/%s-%s_%s" % (args.logdir, unicodedata.name(args.img), args.mode, time.strftime("%d-%m-%Y_%H-%M-%S"))
     os.mkdir(args.logdir)
     os.mkdir(args.logdir + "/models")
     os.mkdir(args.logdir + "/pic")
-
+    print(f'logs saved to dir: {args.logdir}')
     # Misc
     device = torch.device(args.device)
     
@@ -234,6 +236,7 @@ def main(argv=None):
         pool[remaining_pool] = x[remaining_batch].detach()
 
         if it % args.eval_frequency == 0:
+            save_model(f'{args.logdir}/models/model_{it}.pt', model)
             x_eval = seed.clone()  # (1, n_channels, size, size)
 
             eval_video = torch.empty(1, args.eval_iterations, 3, *x_eval.shape[2:])
