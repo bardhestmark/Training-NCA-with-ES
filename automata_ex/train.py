@@ -189,7 +189,7 @@ def main(argv=None):
     print(f'logs saved to dir: {args.logdir}')
 
     with open(f'{args.logdir}/args.json', 'w') as f:
-        f.write(json.dumps(vars(args)))
+        f.write(json.dumps(vars(args),indent=4))
 
     # Misc
     device = torch.device(args.device)
