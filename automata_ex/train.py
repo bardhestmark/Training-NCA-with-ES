@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from PIL import Image
+from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from model import CAModel
@@ -12,6 +13,7 @@ import io
 import os
 import requests
 import unicodedata
+import json
 
 def load_image(path, size=40):
     """Load an image.
@@ -179,11 +181,16 @@ def main(argv=None):
     if not os.path.isdir(args.logdir):
         raise Exception("Logging directory '%s' not found in base folder" % args.logdir)
 
+    # make log dir
     args.logdir = "%s/%s-%s_%s" % (args.logdir, unicodedata.name(args.img), args.mode, time.strftime("%d-%m-%Y_%H-%M-%S"))
     os.mkdir(args.logdir)
     os.mkdir(args.logdir + "/models")
     os.mkdir(args.logdir + "/pic")
     print(f'logs saved to dir: {args.logdir}')
+
+    with open(f'{args.logdir}/args.json', 'w') as f:
+        f.write(json.dumps(vars(args)))
+
     # Misc
     device = torch.device(args.device)
     
@@ -246,6 +253,7 @@ def main(argv=None):
                 x_eval_out = to_rgb(x_eval[:, :4].detach().cpu())
                 eval_video[0, it_eval] = x_eval_out
 
+            save_image(x_eval_out, f'{args.logdir}/pic/im_{it}.png')
             writer.add_video("eval", eval_video, it, fps=60)
 
 
