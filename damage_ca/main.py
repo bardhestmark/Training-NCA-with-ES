@@ -15,7 +15,9 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
     parser.add_argument("--n_channels", type=int, default=16, help="Number of channels of the input tensor")
     parser.add_argument("--dmg_freq", type=int, default=51, help="Frequency for damaging",)
+    parser.add_argument("--max_dmg_freq", type=int, default=-1, help="Limit the number of times of damaging, -1 if not specified")
 
+    parser.add_argument("--sigma", type=float, default=0.2, help="Sigma for gaussian blur, greater value means more blurry")
     parser.add_argument("--alpha", type=float, default=0.005, metavar=0.005, help="Alpha for how much noise to add")
     parser.add_argument("--padding", type=int, default=0, help="Padding for image")
     

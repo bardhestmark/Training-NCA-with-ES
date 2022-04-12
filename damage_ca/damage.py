@@ -9,13 +9,16 @@ import numpy as np
 
 class Damage():
     def __init__(self, args):
+        self.device = torch.device('cpu')
         self.n_iterations = args.n_iterations
         self.batch_size = args.batch_size
         self.dmg_freq = args.dmg_freq
         self.alpha = args.alpha
         self.padding = args.padding
+        self.sigma = args.sigma
         self.size = args.size+2 +self.padding
         self.logdir = args.logdir
+        self.max_dmg_freq = args.max_dmg_freq
         self.load_model_path = args.load_model_path
         self.n_channels = args.n_channels
         self.target_img = load_emoji(args.img, self.size) #rgba img
@@ -29,7 +32,7 @@ class Damage():
         self.x0 = tt(np.repeat(self.seed[None, ...], self.batch_size, 0)) #seed
 
         t_rgb = to_rgb(self.pad_target).permute(2, 0, 1)
-        self.net = CellularAutomataModel(n_channels=16, fire_rate=0.5, hidden_channels=32)
+        self.net = CellularAutomataModel(n_channels=16, fire_rate=0.5, hidden_channels=32).to(self.device)
         save_image(t_rgb, "%s/target_image.png" % self.logdir)
         self.writer = SummaryWriter(self.logdir)
 
@@ -44,17 +47,15 @@ class Damage():
         imgpath = '%s/damaged.png' % (self.logdir)
         self.load_model(self.load_model_path) # model loaded
         x_eval = self.x0.clone()
-        eval_video = torch.empty(1, self.n_iterations, 3, self.size, self.size)
-        blur = get_gaussian_kernel(channels=16)
+        blur = get_gaussian_kernel(sigma=self.sigma,channels=16).to(self.device)
+        dmg_count = 0
         for i in range(self.n_iterations):
-            x_eval_out = to_rgb(x_eval).permute(0, 3, 1, 2)
-            eval_video[0, i] = x_eval_out
-            loss=self.net.loss(x_eval, self.pad_target)
-            self.writer.add_scalar("dmg/loss", loss, i)
+            loss=self.net.loss(x_eval, self.pad_target).mean()
+            self.writer.add_scalar("dmg/loss", -loss, i)
 
             x_eval = self.net(x_eval) #update step
             
-            if i % self.dmg_freq == 0: # do damage
+            if i % self.dmg_freq == 0 and i != 0 and dmg_count < self.max_dmg_freq: # do damage
                 if self.mode == 0:
                     gblur = blur(x_eval[0].permute(2, 0, 1).type(torch.float32)) # returns (ch, s, s)
                     x_eval[0] = gblur.permute(1,2,0)
@@ -65,14 +66,14 @@ class Damage():
                     x_pos = 0
                     dmg_size = self.size
                     x_eval[:, y_pos:y_pos + dmg_size, x_pos:x_pos + dmg_size, :] = 0
-
+                dmg_count += 1
                 image = to_rgb(x_eval).permute(0, 3, 1, 2)
                 save_image(image, imgpath, nrow=1, padding=0)
 
         imgpath = '%s/done.png' % (self.logdir)
         image = to_rgb(x_eval).permute(0, 3, 1, 2)
         save_image(image, imgpath, nrow=1, padding=0)
-        self.writer.add_video("eval_damage", eval_video, 100, fps=60)
+        
         
                     
     

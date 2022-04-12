@@ -2,14 +2,14 @@ INFO:root:
 Arguments:
 mode: 0
 n_iterations: 10000
-batch_size: 1
+batch_size: 8
 n_channels: 16
-dmg_freq: 500
+dmg_freq: 51
+sigma: 1.0
 alpha: 0.005
 padding: 0
 img: '🥕'
 size: 15
-logdir: 'logs/CARROT_12-04-2022_14-25-14_mode0'
+logdir: 'logs/CARROT_12-04-2022_15-26-51_mode0'
 load_model_path: 'models/model_999500'
 
-WARNING:root:The temporary file used by moviepy cannot be deleted.
