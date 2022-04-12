@@ -17,6 +17,7 @@ class Damage():
         self.size = args.size+2 +self.padding
         self.logdir = args.logdir
         self.load_model_path = args.load_model_path
+        self.n_channels = args.n_channels
         self.target_img = load_emoji(args.img, self.size) #rgba img
 
         p = self.padding
@@ -38,14 +39,24 @@ class Damage():
         self.net.double()
 
     def run(self):
+        imgpath = '%s/damaged.png' % (self.logdir)
         self.load_model(self.load_model_path) # model loaded
         x = self.x0.clone()
         for i in range(self.n_iterations): # fully grow first
             x_eval = self.net(x)
-            loss=self.net.loss(x_eval, self.pad_target)
+            loss = self.net.loss(x_eval, self.pad_target)
             self.writer.add_scalar("dmg/loss", loss, i)
 
             if i % self.dmg_freq == 0: # do damage
-                x_eval 
+                #lower half
+                y_pos = (self.size // 2) + 1
+                dmg_size = self.size
+                x_eval[:, y_pos:y_pos + dmg_size, 0:0 + dmg_size, :] = 0
+                image = to_rgb(x_eval).permute(0, 3, 1, 2)
+                save_image(image, imgpath, nrow=1, padding=0)
+        
+        imgpath = '%s/done.png' % (self.logdir)
+        image = to_rgb(x_eval).permute(0, 3, 1, 2)
+        save_image(image, imgpath, nrow=1, padding=0)
                     
     

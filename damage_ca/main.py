@@ -12,7 +12,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--n_iterations", type=int, default=100, help="Number of iterations to test for.")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
-    parser.add_argument("--dmg_freq", type=int, default=500, help="Frequency for damaging",)
+    parser.add_argument("--n_channels", type=int, default=16, help="Number of channels of the input tensor")
+    parser.add_argument("--dmg_freq", type=int, default=51, help="Frequency for damaging",)
 
     parser.add_argument("--alpha", type=float, default=0.005, metavar=0.005, help="Alpha for how much noise to add")
     parser.add_argument("--padding", type=int, default=0, help="Padding for image")
@@ -39,4 +40,5 @@ if __name__ == '__main__':
 
     #dmg here
     dmg = Damage(args)
+    dmg.run()
     

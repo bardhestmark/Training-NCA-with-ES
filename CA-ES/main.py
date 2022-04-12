@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--mode", type=str, default="graphic", metavar="train/interactive/graphic", help="Decides mode to run e.g. train or damage")
+    parser.add_argument("--mode", type=str, default="graphic", metavar="train/interactive/graphic", help="Decides mode to run")
 
     parser.add_argument("--population_size", type=int, default=16, metavar=128, help="Population size")
     parser.add_argument("--n_iterations", type=int, default=100, help="Number of iterations to train for.")
