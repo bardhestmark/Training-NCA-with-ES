@@ -258,13 +258,12 @@ class ES:
                         mpos_x, mpos_y = event.pos
                         mpos_x, mpos_y = mpos_x // cellsize, mpos_y // cellsize
                         x_eval[:, mpos_y:mpos_y + dmg_size, mpos_x:mpos_x + dmg_size, :] = 0
-                        damaged = 100 # the number of steps to record loss after damage hass occurred
+                        damaged = 100 # number of steps to record loss after damage has occurred
 
             x_eval = model(x_eval)
             image = to_rgb(x_eval).permute(0, 3, 1, 2)
-            # Very quick hack to get rid of the batch dimension in tensor
+            
             save_image(image, imgpath, nrow=1, padding=0)
-            image = np.asarray(Image.open(imgpath))
 
             if damaged > 0:
                 loss= self.net.loss(x_eval, self.pad_target)
@@ -276,6 +275,9 @@ class ES:
                     lossfile.close()
                     losses.clear()
                 damaged -= 1
+
+            # Saving and loading each image as a quick hack to get rid of the batch dimension in tensor
+            image = np.asarray(Image.open(imgpath))
 
             self.game_update(surface, image, cellsize)
             time.sleep(0.05)

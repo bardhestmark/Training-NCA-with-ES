@@ -17,7 +17,9 @@ class Damage():
         self.size = args.size+2 +self.padding
         self.logdir = args.logdir
         self.load_model_path = args.load_model_path
+        self.n_channels = args.n_channels
         self.target_img = load_emoji(args.img, self.size) #rgba img
+        self.mode = args.mode # 0 for blur, 1 for pixel removal, 2 for adversarial attck
 
         p = self.padding
         self.pad_target = F.pad(tt(self.target_img), (0, 0, p, p, p, p))
@@ -39,6 +41,7 @@ class Damage():
 
 
     def run(self):
+        imgpath = '%s/damaged.png' % (self.logdir)
         self.load_model(self.load_model_path) # model loaded
         x_eval = self.x0.clone()
         eval_video = torch.empty(1, self.n_iterations, 3, self.size, self.size)
@@ -52,13 +55,22 @@ class Damage():
             x_eval = self.net(x_eval) #update step
             
             if i % self.dmg_freq == 0: # do damage
-                gblur = blur(x_eval[0].permute(2, 0, 1).type(torch.float32)) # returns (ch, s, s)
-                x_eval[0] = gblur.permute(1,2,0)
-                #self.writer.add_image(f'after_{i}', to_rgb(x_eval)[0].permute(2, 0, 1))
-        
-        self.writer.add_video("eval_damage", eval_video, 1, fps=60)
-            
-        
-        
+                if self.mode == 0:
+                    gblur = blur(x_eval[0].permute(2, 0, 1).type(torch.float32)) # returns (ch, s, s)
+                    x_eval[0] = gblur.permute(1,2,0)
+                    #self.writer.add_image(f'after_{i}', to_rgb(x_eval)[0].permute(2, 0, 1))
+                elif self.mode == 1:
+                    #lower half
+                    y_pos = (self.size // 2) + 1
+                    dmg_size = self.size
+                    x_eval[:, y_pos:y_pos + dmg_size, 0:0 + dmg_size, :] = 0
+
+                image = to_rgb(x_eval).permute(0, 3, 1, 2)
+                save_image(image, imgpath, nrow=1, padding=0)
+
+        imgpath = '%s/done.png' % (self.logdir)
+        image = to_rgb(x_eval).permute(0, 3, 1, 2)
+        save_image(image, imgpath, nrow=1, padding=0)
+        self.writer.add_video("eval_damage", eval_video, 1, fps=60) # fix
                     
     

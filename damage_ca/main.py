@@ -10,9 +10,11 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--mode", type=int, default=0, help="0 for gaussian blur, 1 for pixel removal, 2 for adversarial attacks")
     parser.add_argument("--n_iterations", type=int, default=10000, help="Number of iterations to test for.")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
-    parser.add_argument("--dmg_freq", type=int, default=500, help="Frequency for damaging",)
+    parser.add_argument("--n_channels", type=int, default=16, help="Number of channels of the input tensor")
+    parser.add_argument("--dmg_freq", type=int, default=51, help="Frequency for damaging",)
 
     parser.add_argument("--alpha", type=float, default=0.005, metavar=0.005, help="Alpha for how much noise to add")
     parser.add_argument("--padding", type=int, default=0, help="Padding for image")
@@ -27,7 +29,7 @@ if __name__ == '__main__':
     if not os.path.isdir(args.logdir):
         raise Exception("Logging directory '%s' not found in base folder" % args.logdir)
 
-    args.logdir = "%s/%s_%s" % (args.logdir, unicodedata.name(args.img), time.strftime("%d-%m-%Y_%H-%M-%S"))
+    args.logdir = "%s/%s_%s_mode%s" % (args.logdir, unicodedata.name(args.img), time.strftime("%d-%m-%Y_%H-%M-%S"), args.mode)
     os.mkdir(args.logdir)
 
     print(args.logdir)
