@@ -55,10 +55,10 @@ class Damage():
 
             x_eval = self.net(x_eval) #update step
             
-            if i % self.dmg_freq == 0 and i != 0 and dmg_count < self.max_dmg_freq: # do damage
+            if i % self.dmg_freq == 0 and i != 0 and dmg_count != self.max_dmg_freq: # do damage
                 if self.mode == 0:
-                    gblur = blur(x_eval[0].permute(2, 0, 1).type(torch.float32)) # returns (ch, s, s)
-                    x_eval[0] = gblur.permute(1,2,0)
+                    gblur = blur(x_eval.permute(0, 3, 1, 2).type(torch.float32)) # returns (ch, s, s)
+                    x_eval = gblur.permute(0,2,3,1).type(torch.float64)
                     #self.writer.add_image(f'after_{i}', to_rgb(x_eval)[0].permute(2, 0, 1))
                 elif self.mode == 1:
                     #lower half

@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--mode", type=int, default=0, help="0 for gaussian blur, 1 for pixel removal, 2 for adversarial attacks")
     parser.add_argument("--n_iterations", type=int, default=10000, help="Number of iterations to test for.")
-    parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
+    parser.add_argument("--batch_size", type=int, default=8, help="Batch size.")
     parser.add_argument("--n_channels", type=int, default=16, help="Number of channels of the input tensor")
     parser.add_argument("--dmg_freq", type=int, default=51, help="Frequency for damaging",)
     parser.add_argument("--max_dmg_freq", type=int, default=-1, help="Limit the number of times of damaging, -1 if not specified")
