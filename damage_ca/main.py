@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--n_iterations", type=int, default=100, help="Number of iterations to test for.")
+    parser.add_argument("--n_iterations", type=int, default=10000, help="Number of iterations to test for.")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
     parser.add_argument("--dmg_freq", type=int, default=500, help="Frequency for damaging",)
 
@@ -39,4 +39,5 @@ if __name__ == '__main__':
 
     #dmg here
     dmg = Damage(args)
+    dmg.run()
     

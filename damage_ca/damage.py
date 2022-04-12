@@ -2,7 +2,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import save_image
 from model import CellularAutomataModel
-from utils import load_emoji, to_rgb
+from utils import load_emoji, to_rgb, get_gaussian_kernel
 import torch.nn.functional as F
 from torch import tensor as tt
 import numpy as np
@@ -22,7 +22,7 @@ class Damage():
         p = self.padding
         self.pad_target = F.pad(tt(self.target_img), (0, 0, p, p, p, p))
         h, w = self.pad_target.shape[:2]
-        self.seed = np.zeros([h, w, self.n_channels], np.float64)
+        self.seed = np.zeros([h, w, 16], np.float64)
         self.seed[h // 2, w // 2, 3:] = 1.0
         self.x0 = tt(np.repeat(self.seed[None, ...], self.batch_size, 0)) #seed
 
@@ -37,15 +37,28 @@ class Damage():
         self.net.load_state_dict(torch.load(path))
         self.net.double()
 
+
     def run(self):
         self.load_model(self.load_model_path) # model loaded
-        x = self.x0.clone()
-        for i in range(self.n_iterations): # fully grow first
-            x_eval = self.net(x)
+        x_eval = self.x0.clone()
+        eval_video = torch.empty(1, self.n_iterations, 3, self.size, self.size)
+        blur = get_gaussian_kernel(channels=16)
+        for i in range(self.n_iterations):
+            x_eval_out = to_rgb(x_eval)[0].permute(2,0,1)
+            eval_video[0, i] = x_eval_out
             loss=self.net.loss(x_eval, self.pad_target)
             self.writer.add_scalar("dmg/loss", loss, i)
 
+            x_eval = self.net(x_eval) #update step
+            
             if i % self.dmg_freq == 0: # do damage
-                x_eval 
+                gblur = blur(x_eval[0].permute(2, 0, 1).type(torch.float32)) # returns (ch, s, s)
+                x_eval[0] = gblur.permute(1,2,0)
+                #self.writer.add_image(f'after_{i}', to_rgb(x_eval)[0].permute(2, 0, 1))
+        
+        self.writer.add_video("eval_damage", eval_video, 1, fps=60)
+            
+        
+        
                     
     
