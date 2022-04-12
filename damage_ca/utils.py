@@ -20,6 +20,7 @@ def load_emoji(emoji_code, img_size):
     return img
 
 def get_gaussian_kernel(kernel_size=3, sigma=1.0, channels=3, padding=1):
+    """ Create a model for applying 2d convolutional gaussian blur filter"""
     # Create a x, y coordinate grid of shape (kernel_size, kernel_size, 2)
     x_coord = torch.arange(kernel_size)
     x_grid = x_coord.repeat(kernel_size).view(kernel_size, kernel_size)

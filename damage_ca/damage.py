@@ -47,7 +47,7 @@ class Damage():
         eval_video = torch.empty(1, self.n_iterations, 3, self.size, self.size)
         blur = get_gaussian_kernel(channels=16)
         for i in range(self.n_iterations):
-            x_eval_out = to_rgb(x_eval)[0].permute(2,0,1)
+            x_eval_out = to_rgb(x_eval).permute(0, 3, 1, 2)
             eval_video[0, i] = x_eval_out
             loss=self.net.loss(x_eval, self.pad_target)
             self.writer.add_scalar("dmg/loss", loss, i)
@@ -64,13 +64,13 @@ class Damage():
                     y_pos = (self.size // 2) + 1
                     dmg_size = self.size
                     x_eval[:, y_pos:y_pos + dmg_size, 0:0 + dmg_size, :] = 0
-
                 image = to_rgb(x_eval).permute(0, 3, 1, 2)
                 save_image(image, imgpath, nrow=1, padding=0)
 
         imgpath = '%s/done.png' % (self.logdir)
         image = to_rgb(x_eval).permute(0, 3, 1, 2)
         save_image(image, imgpath, nrow=1, padding=0)
-        self.writer.add_video("eval_damage", eval_video, 1, fps=60) # fix
+        self.writer.add_video("eval_damage", eval_video, 100, fps=60)
+        
                     
     
