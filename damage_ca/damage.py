@@ -62,8 +62,10 @@ class Damage():
                 elif self.mode == 1:
                     #lower half
                     y_pos = (self.size // 2) + 1
+                    x_pos = 0
                     dmg_size = self.size
-                    x_eval[:, y_pos:y_pos + dmg_size, 0:0 + dmg_size, :] = 0
+                    x_eval[:, y_pos:y_pos + dmg_size, x_pos:x_pos + dmg_size, :] = 0
+
                 image = to_rgb(x_eval).permute(0, 3, 1, 2)
                 save_image(image, imgpath, nrow=1, padding=0)
 
