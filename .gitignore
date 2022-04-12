@@ -3,3 +3,4 @@
 /.idea
 /venv
 /CA
+**/__pycache__/
