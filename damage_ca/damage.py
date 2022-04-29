@@ -23,7 +23,7 @@ class Damage():
         self.n_channels = args.n_channels
         self.target_img = load_emoji(args.img, self.size) #rgba img
         self.mode = args.mode # 0 for blur, 1 for pixel removal, 2 for adversarial attck
-        self.eps = 0.007
+        self.eps = 0.0007
 
         p = self.padding
         self.pad_target = F.pad(tt(self.target_img), (0, 0, p, p, p, p))
@@ -57,7 +57,7 @@ class Damage():
         dmg_count = 0
         for i in range(self.n_iterations):
             loss=self.net.loss(x_eval, self.pad_target).mean()
-            self.writer.add_scalar("dmg/loss", -loss, i)
+            self.writer.add_scalar("dmg/loss", loss, i)
 
             x_eval = self.net(x_eval) #update step
             
@@ -76,7 +76,7 @@ class Damage():
                     e = x_eval.detach().cpu()
                     e.requires_grad = True
                     l = l_func(e, self.batch_target)
-                    #self.net.zero_grad()
+                    self.net.zero_grad()
                     l.backward()
                     x_eval = adv_attack(x_eval, self.eps, e.grad.data)
                 dmg_count += 1
