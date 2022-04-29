@@ -12,6 +12,6 @@ padding: 0
 eps: 0.007
 img: '🥕'
 size: 15
-logdir: 'logs/CARROT_29-04-2022_14-36-19_mode2'
+logdir: 'logs/CARROT_29-04-2022_14-41-56_mode2'
 load_model_path: 'models/model_999500'
 

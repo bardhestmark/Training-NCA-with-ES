@@ -23,7 +23,7 @@ class Damage():
         self.n_channels = args.n_channels
         self.target_img = load_emoji(args.img, self.size) #rgba img
         self.mode = args.mode # 0 for blur, 1 for pixel removal, 2 for adversarial attck
-        self.eps = 0.0007
+        self.eps = args.eps
 
         p = self.padding
         self.pad_target = F.pad(tt(self.target_img), (0, 0, p, p, p, p))
