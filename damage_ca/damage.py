@@ -59,7 +59,6 @@ class Damage():
             loss=self.net.loss(x_eval, self.pad_target).mean()
             self.writer.add_scalar("dmg/loss", -loss, i)
 
-            x_eval.requires_grad = False
             x_eval = self.net(x_eval) #update step
             
             if i % self.dmg_freq == 0 and i != 0 and dmg_count != self.max_dmg_freq: # do damage
@@ -74,11 +73,12 @@ class Damage():
                     dmg_size = self.size
                     x_eval[:, y_pos:y_pos + dmg_size, x_pos:x_pos + dmg_size, :] = 0
                 elif self.mode==2:
-                    x_eval.requires_grad = True
-                    l = l_func(x_eval, self.batch_target)
-                    self.net.zero_grad()
+                    e = x_eval.detach().cpu()
+                    e.requires_grad = True
+                    l = l_func(e, self.batch_target)
+                    #self.net.zero_grad()
                     l.backward()
-                    x_eval = adv_attack(x_eval, self.eps, x_eval.grad.data)
+                    x_eval = adv_attack(x_eval, self.eps, e.grad.data)
                 dmg_count += 1
                 image = to_rgb(x_eval).permute(0, 3, 1, 2)
                 save_image(image, imgpath, nrow=1, padding=0)
