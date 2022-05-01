@@ -242,7 +242,7 @@ def main(argv=None):
         pool[argmax_pool] = seed.clone()
         pool[remaining_pool] = x[remaining_batch].detach()
 
-        if it % args.eval_frequency == 0:
+        if it % args.eval_frequency == 0 or loss < 3.3e-3:
             save_model(f'{args.logdir}/models/model_{it}.pt', model)
             x_eval = seed.clone()  # (1, n_channels, size, size)
 
@@ -255,6 +255,8 @@ def main(argv=None):
 
             save_image(x_eval_out, f'{args.logdir}/pic/im_{it}.png')
             writer.add_video("eval", eval_video, it, fps=60)
+            if loss < 3.3e-3:
+                break
 
 
 if __name__ == "__main__":

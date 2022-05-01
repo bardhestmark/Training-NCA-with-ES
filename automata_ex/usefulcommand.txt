@@ -1,1 +1,1 @@
-python3 train.py -p 0 -n 10000 -s 9 -hch 32 rabbit.png
+python train.py -p 0 -n 10000 -s 9 -hch 32
