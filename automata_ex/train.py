@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from PIL import Image
+from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from model import CAModel
@@ -12,6 +13,7 @@ import io
 import os
 import requests
 import unicodedata
+import json
 
 def load_image(path, size=40):
     """Load an image.
@@ -63,6 +65,8 @@ def to_rgb(img_rgba):
     rgb, a = img_rgba[:, :3, ...], torch.clamp(img_rgba[:, 3:, ...], 0, 1)
     return torch.clamp(1.0 - a + rgb, 0, 1)
 
+def save_model(PATH, model):
+    torch.save(model.state_dict(), PATH)
 
 def make_seed(size, n_channels):
     """Create a starting tensor for training.
@@ -123,7 +127,7 @@ def main(argv=None):
             "-n",
             "--n-batches",
             type=int,
-            default=5000,
+            default=10000,
             help="Number of batches to train for.",
     )
     parser.add_argument(
@@ -177,10 +181,15 @@ def main(argv=None):
     if not os.path.isdir(args.logdir):
         raise Exception("Logging directory '%s' not found in base folder" % args.logdir)
 
-    args.logdir = "%s/%s-%s_%s" % (args.logdir, unicodedata.name(args.img), args.mode, time.strftime("%d-%m-%Y_%H:%M:%S"))
+    # make log dir
+    args.logdir = "%s/%s-%s_%s" % (args.logdir, unicodedata.name(args.img), args.mode, time.strftime("%d-%m-%Y_%H-%M-%S"))
     os.mkdir(args.logdir)
     os.mkdir(args.logdir + "/models")
     os.mkdir(args.logdir + "/pic")
+    print(f'logs saved to dir: {args.logdir}')
+
+    with open(f'{args.logdir}/args.json', 'w') as f:
+        f.write(json.dumps(vars(args),indent=4))
 
     # Misc
     device = torch.device(args.device)
@@ -234,6 +243,7 @@ def main(argv=None):
         pool[remaining_pool] = x[remaining_batch].detach()
 
         if it % args.eval_frequency == 0:
+            save_model(f'{args.logdir}/models/model_{it}.pt', model)
             x_eval = seed.clone()  # (1, n_channels, size, size)
 
             eval_video = torch.empty(1, args.eval_iterations, 3, *x_eval.shape[2:])
@@ -243,6 +253,7 @@ def main(argv=None):
                 x_eval_out = to_rgb(x_eval[:, :4].detach().cpu())
                 eval_video[0, it_eval] = x_eval_out
 
+            save_image(x_eval_out, f'{args.logdir}/pic/im_{it}.png')
             writer.add_video("eval", eval_video, it, fps=60)
 
 

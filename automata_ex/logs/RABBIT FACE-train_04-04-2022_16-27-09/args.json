@@ -1,0 +1,15 @@
+{
+    "img": "\ud83d\udc30",
+    "batch_size": 8,
+    "device": "cpu",
+    "eval_frequency": 500,
+    "eval_iterations": 300,
+    "n_batches": 10000,
+    "n_channels": 16,
+    "logdir": "logs/RABBIT FACE-train_04-04-2022_16-27-09",
+    "padding": 0,
+    "pool_size": 1024,
+    "size": 9,
+    "hidden_channels": 32,
+    "mode": "train"
+}

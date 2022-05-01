@@ -2,4 +2,4 @@
 /workspace.xml
 /.idea
 /venv
-/CA
+**/__pycache__/

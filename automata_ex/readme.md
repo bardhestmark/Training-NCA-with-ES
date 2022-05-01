@@ -13,7 +13,7 @@ Get parameters:
 ``python train.py --help``
 
 Run args suggestion:
-``python train.py -d cuda -n 10000 -b 4 rabbit.png``
+``python train.py -p 0 -n 10000 -s 9 -hch 32 rabbit.png``
 Remove '-d cuda' to train using cpu
 
 In pytorch edit configuration and add parameters:
