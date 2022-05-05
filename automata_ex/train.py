@@ -173,16 +173,40 @@ def main(argv=None):
             help="Number of hidden channels"
     )
 
+    parser.add_argument(
+        "-pool",
+        "--pool",
+        type=str,
+        default="true",
+        help="True to train with pools, false to train without them"
+    )
+
+    parser.add_argument(
+        "-threshhold",
+        "--th",
+        type=float,
+        default=3.3e-3,
+        help="Stop training at certain loss threshhold"
+    )
+
     # Parse arguments
     args = parser.parse_args()
     print(vars(args))
-    args.img = "🐰"
+
+    # pools on/off
+    if args.pool.lower() == "true":
+        print("Training with sample pools")
+        args.pool = True
+    else:
+        args.pool = False
+
+    args.img =  "🐰"#"🥕" # switch emoji here
     args.mode = "train"
     if not os.path.isdir(args.logdir):
         raise Exception("Logging directory '%s' not found in base folder" % args.logdir)
 
     # make log dir
-    args.logdir = "%s/%s-%s_%s" % (args.logdir, unicodedata.name(args.img), args.mode, time.strftime("%d-%m-%Y_%H-%M-%S"))
+    args.logdir = "%s/%s-%s-%s_%s" % (args.logdir, args.size, unicodedata.name(args.img), args.mode, time.strftime("%d-%m-%Y_%H-%M-%S"))
     os.mkdir(args.logdir)
     os.mkdir(args.logdir + "/models")
     os.mkdir(args.logdir + "/pic")
@@ -200,7 +224,7 @@ def main(argv=None):
 
     # Target image
     #target_img_ = load_image(args.img, size=args.size)
-    target_img_ = load_emoji("🐰", args.size)
+    target_img_ = load_emoji(args.img, args.size)
     p = args.padding
     target_img_ = nn.functional.pad(target_img_, (p, p, p, p), "constant", 0)
     target_img = target_img_.to(device)
@@ -234,15 +258,16 @@ def main(argv=None):
         optimizer.step()
         writer.add_scalar("train/loss", -loss, it)
 
-        argmax_batch = loss_batch.argmax().item()
-        argmax_pool = batch_ixs[argmax_batch]
-        remaining_batch = [i for i in range(args.batch_size) if i != argmax_batch]
-        remaining_pool = [i for i in batch_ixs if i != argmax_pool]
+        if args.pool:
+            argmax_batch = loss_batch.argmax().item()
+            argmax_pool = batch_ixs[argmax_batch]
+            remaining_batch = [i for i in range(args.batch_size) if i != argmax_batch]
+            remaining_pool = [i for i in batch_ixs if i != argmax_pool]
 
-        pool[argmax_pool] = seed.clone()
-        pool[remaining_pool] = x[remaining_batch].detach()
+            pool[argmax_pool] = seed.clone()
+            pool[remaining_pool] = x[remaining_batch].detach()
 
-        if it % args.eval_frequency == 0 or loss < 3.3e-3:
+        if it % args.eval_frequency == 0 or loss < args.th:
             save_model(f'{args.logdir}/models/model_{it}.pt', model)
             x_eval = seed.clone()  # (1, n_channels, size, size)
 
@@ -255,8 +280,8 @@ def main(argv=None):
 
             save_image(x_eval_out, f'{args.logdir}/pic/im_{it}.png')
             writer.add_video("eval", eval_video, it, fps=60)
-            if loss < 3.3e-3:
-                break
+            if loss < args.th:
+               break
 
 
 if __name__ == "__main__":
