@@ -200,7 +200,7 @@ def main(argv=None):
     else:
         args.pool = False
 
-    args.img =  "🐰"#"🥕" # switch emoji here
+    args.img =  "🥕"#"🐰" # switch emoji here
     args.mode = "train"
     if not os.path.isdir(args.logdir):
         raise Exception("Logging directory '%s' not found in base folder" % args.logdir)
