@@ -15,6 +15,7 @@ import requests
 import unicodedata
 import json
 
+
 def load_image(path, size=40):
     """Load an image.
     Parameters
@@ -65,8 +66,10 @@ def to_rgb(img_rgba):
     rgb, a = img_rgba[:, :3, ...], torch.clamp(img_rgba[:, 3:, ...], 0, 1)
     return torch.clamp(1.0 - a + rgb, 0, 1)
 
+
 def save_model(PATH, model):
     torch.save(model.state_dict(), PATH)
+
 
 def make_seed(size, n_channels):
     """Create a starting tensor for training.
@@ -90,117 +93,144 @@ def make_seed(size, n_channels):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-            description="Training script for the Celluar Automata"
+        description="Training script for the Celluar Automata"
     )
-    parser.add_argument("-img","--img", type=str, default="rabbit.png", help="Path to the image we want to reproduce")
+    parser.add_argument("-img", "--img", type=str, default="rabbit.png",
+                        help="Path to the image we want to reproduce")
 
     parser.add_argument(
-            "-b",
-            "--batch-size",
-            type=int,
-            default=8,
-            help="Batch size. Samples will always be taken randomly from the pool."
+        "-b",
+        "--batch-size",
+        type=int,
+        default=8,
+        help="Batch size. Samples will always be taken randomly from the pool."
     )
     parser.add_argument(
-            "-d",
-            "--device",
-            type=str,
-            default="cpu",
-            help="Device to use",
-            choices=("cpu", "cuda"),
+        "-d",
+        "--device",
+        type=str,
+        default="cpu",
+        help="Device to use",
+        choices=("cpu", "cuda"),
     )
     parser.add_argument(
-            "-e",
-            "--eval-frequency",
-            type=int,
-            default=500,
-            help="Evaluation frequency.",
+        "-e",
+        "--eval-frequency",
+        type=int,
+        default=500,
+        help="Evaluation frequency.",
     )
     parser.add_argument(
-            "-i",
-            "--eval-iterations",
-            type=int,
-            default=300,
-            help="Number of iterations when evaluating.",
+        "-i",
+        "--eval-iterations",
+        type=int,
+        default=300,
+        help="Number of iterations when evaluating.",
     )
     parser.add_argument(
-            "-n",
-            "--n-batches",
-            type=int,
-            default=10000,
-            help="Number of batches to train for.",
+        "-n",
+        "--n-batches",
+        type=int,
+        default=10000,
+        help="Number of batches to train for.",
     )
     parser.add_argument(
-            "-c",
-            "--n-channels",
-            type=int,
-            default=16,
-            help="Number of channels of the input tensor",
+        "-c",
+        "--n-channels",
+        type=int,
+        default=16,
+        help="Number of channels of the input tensor",
     )
     parser.add_argument(
-            "-l",
-            "--logdir",
-            type=str,
-            default="logs",
-            help="Folder where all the logs and outputs are saved.",
+        "-l",
+        "--logdir",
+        type=str,
+        default="logs",
+        help="Folder where all the logs and outputs are saved.",
     )
     parser.add_argument(
-            "-p",
-            "--padding",
-            type=int,
-            default=0,
-            help="Padding. The shape after padding is (h + 2 * p, w + 2 * p).",
+        "-p",
+        "--padding",
+        type=int,
+        default=0,
+        help="Padding. The shape after padding is (h + 2 * p, w + 2 * p).",
     )
     parser.add_argument(
-            "--pool-size",
-            type=int,
-            default=1024,
-            help="Size of the training pool",
+        "--pool-size",
+        type=int,
+        default=1024,
+        help="Size of the training pool",
     )
     parser.add_argument(
-            "-s",
-            "--size",
-            type=int,
-            default=9,
-            help="Image size",
+        "-s",
+        "--size",
+        type=int,
+        default=9,
+        help="Image size",
     )
 
     parser.add_argument(
-            "-hch",
-            "--hidden-channels",
-            type=int,
-            default=32,
-            help="Number of hidden channels"
+        "-hch",
+        "--hidden-channels",
+        type=int,
+        default=32,
+        help="Number of hidden channels"
+    )
+
+    parser.add_argument(
+        "-pool",
+        "--pool",
+        type=str,
+        default="true",
+        help="True to train with pools, false to train without them"
+    )
+
+    parser.add_argument(
+        "-threshhold",
+        "--th",
+        type=float,
+        default=3.3e-3,
+        help="Stop training at certain loss threshhold"
     )
 
     # Parse arguments
     args = parser.parse_args()
     print(vars(args))
-    args.img = "🐰"
+
+    # pools on/off
+    if args.pool.lower() == "true":
+        print("Training with sample pools")
+        args.pool = True
+    else:
+        args.pool = False
+
+    args.img =  "🥕"#"🐰" # switch emoji here
     args.mode = "train"
     if not os.path.isdir(args.logdir):
-        raise Exception("Logging directory '%s' not found in base folder" % args.logdir)
+        raise Exception(
+            "Logging directory '%s' not found in base folder" % args.logdir)
 
     # make log dir
-    args.logdir = "%s/%s-%s_%s" % (args.logdir, unicodedata.name(args.img), args.mode, time.strftime("%d-%m-%Y_%H-%M-%S"))
+    args.logdir = "%s/%s-%s-%s_%s" % (args.logdir, args.size, unicodedata.name(
+        args.img), args.mode, time.strftime("%d-%m-%Y_%H-%M-%S"))
     os.mkdir(args.logdir)
     os.mkdir(args.logdir + "/models")
     os.mkdir(args.logdir + "/pic")
     print(f'logs saved to dir: {args.logdir}')
 
     with open(f'{args.logdir}/args.json', 'w') as f:
-        f.write(json.dumps(vars(args),indent=4))
+        f.write(json.dumps(vars(args), indent=4))
 
     # Misc
     device = torch.device(args.device)
-    
+
     log_path = pathlib.Path(args.logdir)
     log_path.mkdir(parents=True, exist_ok=True)
     writer = SummaryWriter(log_path)
 
     # Target image
     #target_img_ = load_image(args.img, size=args.size)
-    target_img_ = load_emoji("🐰", args.size)
+    target_img_ = load_emoji(args.img, args.size)
     p = args.padding
     target_img_ = nn.functional.pad(target_img_, (p, p, p, p), "constant", 0)
     target_img = target_img_.to(device)
@@ -209,7 +239,8 @@ def main(argv=None):
     writer.add_image("ground truth", to_rgb(target_img_)[0])
 
     # Model and optimizer
-    model = CAModel(n_channels=args.n_channels, hidden_channels=args.hidden_channels, device=device)
+    model = CAModel(n_channels=args.n_channels,
+                    hidden_channels=args.hidden_channels, device=device)
     optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
 
     # Pool initialization
@@ -219,7 +250,7 @@ def main(argv=None):
 
     for it in tqdm(range(args.n_batches)):
         batch_ixs = np.random.choice(
-                args.pool_size, args.batch_size, replace=False
+            args.pool_size, args.batch_size, replace=False
         ).tolist()
 
         x = pool[batch_ixs]
@@ -234,19 +265,22 @@ def main(argv=None):
         optimizer.step()
         writer.add_scalar("train/loss", -loss, it)
 
-        argmax_batch = loss_batch.argmax().item()
-        argmax_pool = batch_ixs[argmax_batch]
-        remaining_batch = [i for i in range(args.batch_size) if i != argmax_batch]
-        remaining_pool = [i for i in batch_ixs if i != argmax_pool]
+        if args.pool:
+            argmax_batch = loss_batch.argmax().item()
+            argmax_pool = batch_ixs[argmax_batch]
+            remaining_batch = [i for i in range(
+                args.batch_size) if i != argmax_batch]
+            remaining_pool = [i for i in batch_ixs if i != argmax_pool]
 
-        pool[argmax_pool] = seed.clone()
-        pool[remaining_pool] = x[remaining_batch].detach()
+            pool[argmax_pool] = seed.clone()
+            pool[remaining_pool] = x[remaining_batch].detach()
 
-        if it % args.eval_frequency == 0:
+        if it % args.eval_frequency == 0 or loss < args.th:
             save_model(f'{args.logdir}/models/model_{it}.pt', model)
             x_eval = seed.clone()  # (1, n_channels, size, size)
 
-            eval_video = torch.empty(1, args.eval_iterations, 3, *x_eval.shape[2:])
+            eval_video = torch.empty(
+                1, args.eval_iterations, 3, *x_eval.shape[2:])
 
             for it_eval in range(args.eval_iterations):
                 x_eval = model(x_eval)
@@ -255,6 +289,8 @@ def main(argv=None):
 
             save_image(x_eval_out, f'{args.logdir}/pic/im_{it}.png')
             writer.add_video("eval", eval_video, it, fps=60)
+            if loss < args.th:
+                break
 
 
 if __name__ == "__main__":
