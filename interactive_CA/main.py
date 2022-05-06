@@ -18,14 +18,15 @@ models = [
     'final_models\\15-CARROT-train_29-04-2022_11-18-06\models\model_1104000',
     'automata_ex\logs\CARROT-train_01-05-2022_14-19-47\models\model_16000.pt',
     'automata_ex\logs\CARROT-train_01-05-2022_15-08-31\models\model_79000.pt',
-    'CA-ES\saved_models\\20_lizard'
+    'CA-ES\saved_models\\20_lizard',
+    'final_models\Adam\SamplePools\\15-CARROT-train_05-05-2022_17-00-31\models\model_19500.pt'
 ]
 
 if __name__ == '__main__':
-    emoji = '🦎'
-    load_model = models[4]
-    size = 20
-    es = True
+    emoji = '🥕'
+    load_model = models[5]
+    size = 40
+    es = False
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--img", type=str, default=emoji, metavar="🐰", help="The emoji to train on")

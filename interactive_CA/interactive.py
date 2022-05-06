@@ -118,7 +118,7 @@ class Interactive:
             #     dmg_size = self.size
             #     if self.es: x_eval[:, mpos_y:mpos_y + dmg_size, mpos_x:mpos_x + dmg_size, :] = 0
             #     else:       x_eval[:, :, mpos_y:mpos_y + dmg_size, mpos_x:mpos_x + dmg_size] = 0
-            if counter == 4000000: pygame.quit()
+            if counter == 400: pygame.quit()
             counter += 1
 
             loss = self.net.loss(x_eval, self.pad_target)
