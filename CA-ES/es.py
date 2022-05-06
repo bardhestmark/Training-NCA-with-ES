@@ -15,9 +15,6 @@ from torchvision.utils import save_image
 from model import CellularAutomataModel
 from utils import load_emoji, save_model, to_rgb, Pool
 
-import pygame
-import time
-from PIL import Image
 import logging
 
 class ES:
@@ -49,6 +46,8 @@ class ES:
         self.seed[h // 2, w // 2, 3:] = 1.0
 
         self.net = CellularAutomataModel(n_channels=self.n_channels, fire_rate=self.fire_rate, hidden_channels=self.hidden_size)
+        self.net.share_memory()
+        
         self.param_shape = [tuple(p.shape) for p in self.net.parameters()]
 
         self.pool = Pool(self.seed, self.pool_size)
@@ -70,9 +69,7 @@ class ES:
         self.net.double()
 
     def fitness_shape(self, x):
-        """Sort x and and map x to linear values between -0.5 and 0.5
-            Return standard score of x
-        """
+        """Sort x and and map x to linear values between -0.5 and 0.5"""
         shaped = np.zeros(len(x))
         shaped[x.argsort()] = np.arange(len(x), dtype=np.float64)
         shaped /= (len(x) - 1)
@@ -105,9 +102,7 @@ class ES:
         return np.array(epsilons, dtype=np.object)
 
     def step(self, model_try, x):
-        """Perform a generation of CA using trained net.
-            Return output x and loss
-        """
+        """Perform a generation of CA using trained net."""
         torch.seed()
         iter_n = torch.randint(30, 40, (1,)).item()
         for _ in range(iter_n): x = model_try(x)
@@ -118,9 +113,7 @@ class ES:
         return x, loss.item()
 
     def fitness(self, epsilon, x0, pid, q=None):
-        """Method that start a generation of ES.
-            Return output from generation x and its fitness
-        """
+        """start a generation of ES."""
         model_try = copy.deepcopy(self.net)
         if epsilon is not None:
             for i, w in enumerate(model_try.parameters()):
@@ -139,11 +132,11 @@ class ES:
         # fit_t1 = -0.06 # testing for size ~20
         # fit_t2 = -0.03
 
-        fit_t1 = -0.05 # works well for size ~15
-        fit_t2 = -0.02
+        # fit_t1 = -0.05 # works well for size ~15
+        # fit_t2 = -0.02
 
-        # fit_t1 = -0.03 # used for size 9
-        # fit_t2 = -0.01
+        fit_t1 = -0.03 # used for size 9
+        fit_t2 = -0.01
 
         if not self.decay_state == 2:
             if fitness >= fit_t1 and self.decay_state == 0:
@@ -177,12 +170,13 @@ class ES:
 
         t = trange(self.n_iterations, desc='Mean reward:', leave=True)
         for iteration in t:
-            batch = self.pool.sample(self.batch_size)
-            x0 = batch["x"]
-            loss_rank = self.net.loss(tt(x0), self.pad_target).numpy().argsort()[::-1]
-            x0 = x0[loss_rank]
-            x0[:1] = self.seed
-            x0 = tt(x0)
+            if self.pool_size > 1:
+                batch = self.pool.sample(self.batch_size)
+                x0 = batch["x"]
+                loss_rank = self.net.loss(tt(x0), self.pad_target).numpy().argsort()[::-1]
+                x0 = x0[loss_rank]
+                x0[:1] = self.seed
+                x0 = tt(x0)
             
             epsilons = self.get_population()
             fitnesses = np.zeros(self.population_size, dtype=np.float64)
@@ -200,9 +194,10 @@ class ES:
                 xs[pid] = x
             processes = []
 
-            idx = np.argmax(fitnesses)
-            batch["x"][:] = xs[idx]
-            self.pool.commit(batch)
+            if self.pool_size > 1:
+                idx = np.argmax(fitnesses)
+                batch["x"][:] = xs[idx]
+                self.pool.commit(batch)
 
             fitnesses = np.array(fitnesses).astype(np.float64)
             self.update_parameters(fitnesses, epsilons)
@@ -210,86 +205,31 @@ class ES:
             # Logging
             mean_fit = np.mean(fitnesses)
             self.writer.add_scalar("train/fit", mean_fit, iteration)
-
+            
             if iteration % 10 == 0:
                 t.set_description("Mean reward: %.4f    " % mean_fit, refresh=True)
 
-            if (iteration+1) % self.eval_freq == 0:
+            if (iteration) % self.eval_freq == 0:
                 self.decay_lr(mean_fit)
-                
+
                 # Save picture of model
                 x_eval = x0.clone()
-                model = self.net
                 pics = []
-                
-                for eval in range(36):
-                    x_eval = model(x_eval)
-                    if eval % 5 == 0:
+                growth_loss = []
+                for eval in range(201):
+                    x_eval = self.net(x_eval)
+                    if eval < 41 and eval % 5 == 0:
                         pics.append(to_rgb(x_eval).permute(0, 3, 1, 2))
-                
+                    if eval in [40, 200]: growth_loss.append(self.net.loss(x_eval, self.pad_target))
+
+                self.writer.add_scalar("growth_loss/40", growth_loss[0], iteration)
+                self.writer.add_scalar("growth_loss/200", growth_loss[1], iteration)
                 save_image(torch.cat(pics, dim=0), '%s/pic/big%04d.png' % (self.logdir, iteration), nrow=1, padding=0)
                 save_model(self.net, self.logdir + "/models/model_" + str(iteration))
-
-
-    # Do damage on model using pygame, cannot run through ssh
-    def interactive(self):
-        model = self.net
-        x_eval = tt(np.repeat(self.seed[None, ...], self.batch_size, 0))
-
-        cellsize = 50
-        imgpath = '%s/one.png' % (self.logdir)
-        
-        pygame.init()
-        surface = pygame.display.set_mode((self.size * cellsize, self.size * cellsize))
-        pygame.display.set_caption("Interactive CA-ES")
-
-        damaged = 0
-        losses = []
-
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    return
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # damage
-                    if damaged == 0:
-                        dmg_size = 20
-                        mpos_x, mpos_y = event.pos
-                        mpos_x, mpos_y = mpos_x // cellsize, mpos_y // cellsize
-                        x_eval[:, mpos_y:mpos_y + dmg_size, mpos_x:mpos_x + dmg_size, :] = 0
-                        damaged = 100 # number of steps to record loss after damage has occurred
-
-            x_eval = model(x_eval)
-            image = to_rgb(x_eval).permute(0, 3, 1, 2)
-            
-            save_image(image, imgpath, nrow=1, padding=0)
-
-            if damaged > 0:
-                loss= self.net.loss(x_eval, self.pad_target)
-                losses.append(loss)
-                if damaged == 1:
-                    lossfile = open('%s/losses.txt' % self.logdir, "w")
-                    for l in range(len(losses)):
-                        lossfile.write('%d,%.06f\n' % (l, losses[l]))
-                    lossfile.close()
-                    losses.clear()
-                damaged -= 1
-
-            # Saving and loading each image as a quick hack to get rid of the batch dimension in tensor
-            image = np.asarray(Image.open(imgpath))
-
-            self.game_update(surface, image, cellsize)
-            time.sleep(0.05)
-            pygame.display.update()
-
-    def game_update(self, surface, cur_img, sz):
-        nxt = np.zeros((cur_img.shape[0], cur_img.shape[1]))
-
-        for r, c, _ in np.ndindex(cur_img.shape):
-            pygame.draw.rect(surface, cur_img[r,c], (c*sz, r*sz, sz, sz))
-
-        return nxt
+  
+            # if mean_fit > -0.003: 
+            #     logging.info("Training goal reached, exiting")
+            #     break
 
     def generate_graphic(self):
         model = self.net
