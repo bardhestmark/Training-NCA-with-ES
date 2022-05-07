@@ -1,3 +1,9 @@
+import os
+import pandas as pd
+import tensorflow as tf
+from tensorflow.core.util import event_pb2
+
+
 def convert_tb_data(root_dir, sort_by=None):
     """Convert local TensorBoard data into Pandas DataFrame.
 
@@ -18,11 +24,6 @@ def convert_tb_data(root_dir, sort_by=None):
         pandas.DataFrame with [wall_time, name, step, value] columns.
 
     """
-    import os
-    import pandas as pd
-    import tensorflow as tf
-    from tensorflow.core.util import event_pb2
-
     def convert_tfevent(filepath):
         serialized = tf.data.TFRecordDataset(filepath)
         events = [event_pb2.Event.FromString(s.numpy()) for s in serialized]
