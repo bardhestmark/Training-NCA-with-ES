@@ -95,9 +95,9 @@ class Interactive:
         else:
             image = to_rgb_ad(x[:, :4].detach().cpu())
         save_image(image, path, nrow=1, padding=0)
-        return np.asarray(Image.open(self.imgpath))
 
     # Do damage on model using pygame, cannot run through ssh
+
     def interactive(self):
         x_eval = self.seedclone()
 
@@ -147,12 +147,12 @@ class Interactive:
                         x_eval = self.seedclone()
 
             x_eval = self.net(x_eval)
-            image = self.save_cell(x_eval, self.imgpath)
+            self.save_cell(x_eval, self.imgpath)
             cur_path = f'{self.logdir}/{counter}.png'
 
             # Damage at 51:
             if counter == 40:
-                save_image(image, cur_path, nrow=1, padding=0)
+                self.save_cell(x_eval, cur_path)
             elif counter == 51:
                 # For lower half:
                 mpos_y = (self.size // 2) + 1
@@ -167,7 +167,7 @@ class Interactive:
                            mpos_x:mpos_x + dmg_size] = 0
                 self.save_cell(x_eval, cur_path)
             elif counter == 60:
-                save_image(image, cur_path, nrow=1, padding=0)
+                self.save_cell(x_eval, cur_path)
 
             loss = self.net.loss(x_eval, self.pad_target)
             self.writer.add_scalar("train/fit", loss, counter)
@@ -182,7 +182,7 @@ class Interactive:
             #     damaged += 1
 
             # Saving and loading each image as a quick hack to get rid of the batch dimension in tensor
-
+            image = np.asarray(Image.open(self.imgpath))
             self.game_update(surface, image, cellsize)
             time.sleep(0.00)  # update delay
             if counter == 400:
