@@ -36,6 +36,7 @@ class Interactive:
         self.es = args.es
         self.eps = args.eps
         self.emoji_size = args.emoji_size
+        self.imgpath = '%s/one.png' % (self.logdir)
 
         if self.es:
             self.target_img = load_emoji(args.img, self.emoji_size)
@@ -94,13 +95,13 @@ class Interactive:
         else:
             image = to_rgb_ad(x[:, :4].detach().cpu())
         save_image(image, path, nrow=1, padding=0)
+        return np.asarray(Image.open(self.imgpath))
 
     # Do damage on model using pygame, cannot run through ssh
     def interactive(self):
         x_eval = self.seedclone()
 
         cellsize = 20
-        imgpath = '%s/one.png' % (self.logdir)
 
         pygame.init()
         surface = pygame.display.set_mode(
@@ -146,11 +147,12 @@ class Interactive:
                         x_eval = self.seedclone()
 
             x_eval = self.net(x_eval)
-            self.save_cell(x_eval, imgpath)
+            image = self.save_cell(x_eval, self.imgpath)
+            cur_path = f'{self.logdir}/{counter}.png'
 
             # Damage at 51:
             if counter == 40:
-                self.save_cell(x_eval, f'{self.logdir}/{counter}.png')
+                save_image(image, cur_path, nrow=1, padding=0)
             elif counter == 51:
                 # For lower half:
                 mpos_y = (self.size // 2) + 1
@@ -163,9 +165,9 @@ class Interactive:
                 else:
                     x_eval[:, :, mpos_y:mpos_y + dmg_size,
                            mpos_x:mpos_x + dmg_size] = 0
-                self.save_cell(x_eval, f'{self.logdir}/{counter}.png')
+                self.save_cell(x_eval, cur_path)
             elif counter == 60:
-                self.save_cell(x_eval, f'{self.logdir}/{counter}.png')
+                save_image(image, cur_path, nrow=1, padding=0)
 
             loss = self.net.loss(x_eval, self.pad_target)
             self.writer.add_scalar("train/fit", loss, counter)
@@ -180,7 +182,6 @@ class Interactive:
             #     damaged += 1
 
             # Saving and loading each image as a quick hack to get rid of the batch dimension in tensor
-            image = np.asarray(Image.open(imgpath))
 
             self.game_update(surface, image, cellsize)
             time.sleep(0.00)  # update delay
