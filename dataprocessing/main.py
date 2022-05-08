@@ -13,7 +13,7 @@ type_ = ['carrot', 'rabbit']
 colors = ['r','b','g','m','c']
 labels = ['ES', 'Adam']
 
-s = size[0]
+s = size[1]
 t = type_[1]
 
 logdir = dirs[0]+os.sep+s+os.sep+t
