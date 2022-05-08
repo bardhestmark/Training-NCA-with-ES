@@ -208,7 +208,7 @@ class Interactive:
             # time.sleep(0.005)  # update delay
             counter += 1
             pygame.display.update()
-            if counter == 400:
+            if counter == 1000:
                 print('Reached 400 iterations. Shutting down...')
                 pygame.quit()
                 sys.exit()

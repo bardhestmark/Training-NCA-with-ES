@@ -7,7 +7,9 @@ import time
 from colorama import Fore
 plt.style.use('seaborn-whitegrid')
 
-dirs = ['data\\growing_results\\non_samples', 'data\\growing_results\\samples']
+dirs = ['data\\growing_results\\non_samples', 'data\\growing_results\\samples',
+'data\\adversarial\\growth\\nosample','data\\adversarial\\growth\\sample',
+'data\\adversarial\\after\\nosample', 'data\\adversarial\\after\\sample']
 size = ['9x9', '15x15']
 type_ = ['carrot', 'rabbit']
 
@@ -39,7 +41,7 @@ def graph(s, t, d):
 
 
 def main():
-    dir = dirs[1]
+    dir = dirs[5]
     for s in size:
         for t in type_:
             graph(s,t,dir)
