@@ -16,7 +16,7 @@ labels = ['ES', 'Adam']
 s = size[1]
 t = type_[1]
 
-logdir = dirs[0]+os.sep+s+os.sep+t
+logdir = dirs[1]+os.sep+s+os.sep+t
 eventdirs = [d for d in os.listdir(logdir)]
 fig = plt.figure()
 ax = plt.axes()

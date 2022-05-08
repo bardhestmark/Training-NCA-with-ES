@@ -176,7 +176,7 @@ class Interactive:
             image = np.asarray(Image.open(self.imgpath))
             self.game_update(surface, image, cellsize)
             time.sleep(0.00)  # update delay
-            if counter == 400:
+            if counter == 2000:
                 print('Reached 400 iterations. Shutting down...')
                 pygame.quit()
                 sys.exit()
