@@ -46,7 +46,7 @@ models = [adam_nonsample_models, adam_sample_models,
 
 if __name__ == '__main__':
     # pick model [Index of model types][index of 9x9 or 15x15 rabbit or carrot]
-    model = models[2][0]  # change only this or size
+    model = models[3][3]  # change only this or size
 
     # Auto determined
     load_model = model[0]
