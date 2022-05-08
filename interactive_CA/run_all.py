@@ -32,6 +32,7 @@ models = [adam_nonsample_models, adam_sample_models,
           es_nonsample_models, es_sample_models]
 
 if __name__ == '__main__':
+    # Run all models:
     for i in models:
         for model in i:
             load_model = model[0]
@@ -40,3 +41,12 @@ if __name__ == '__main__':
             es = model[3]
             command = "python .\interactive_CA\main.py -i %s -s %i -l %s -e %r" % (emoji, size, load_model, es)
             subprocess.run(command)
+
+    # # Run single model:
+    # model = models[3][2]
+    # load_model = model[0]
+    # emoji = model[1]
+    # size = model[2]
+    # es = model[3]
+    # command = "python .\interactive_CA\main.py -i %s -s %i -l %s -e %r" % (emoji, size, load_model, es)
+    # subprocess.run(command)
