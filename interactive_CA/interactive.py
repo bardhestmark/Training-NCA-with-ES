@@ -64,9 +64,6 @@ class Interactive:
                 self.target_img, (p, p, p, p), "constant", 0)
             self.pad_target = self.pad_target.repeat(1, 1, 1, 1)
 
-        # whidden = torch.concat((self.pad_target, torch.zeros((self.size,self.size,12))), axis=2)
-        # self.batch_target = tt(np.repeat(whidden[None, ...], 1, 0))
-
         if args.load_model_path != "":
             self.load_model(args.load_model_path)
 
@@ -151,10 +148,9 @@ class Interactive:
             self.save_cell(x_eval, self.imgpath)
             cur_path = f'{self.logdir}/{counter}.png'
 
-            # Damage at 51:
             if counter in [40, 60, 100, 150, 200, 400]:
                 self.save_cell(x_eval, cur_path)
-            # Quadratic erasing
+            # Quadratic erasing at 51
             # elif counter == 51:
             #     # record loss before dmg
             #     before_loss = self.net.loss(x_eval, self.pad_target)
