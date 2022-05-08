@@ -139,7 +139,7 @@ class Interactive:
             if counter in [40, 60, 100, 150, 200, 400]:
                 self.save_cell(x_eval, cur_path)
             # Quadratic erasing at 51
-            # elif counter == 51:
+            # if counter == 51:
             #     # record loss before dmg
             #     before_loss = self.net.loss(x_eval, self.pad_target)
             #     # For lower half:
@@ -176,9 +176,9 @@ class Interactive:
             image = np.asarray(Image.open(self.imgpath))
             self.game_update(surface, image, cellsize)
             time.sleep(0.00)  # update delay
-            if counter == 2000:
+            counter += 1
+            pygame.display.update()
+            if counter == 400:
                 print('Reached 400 iterations. Shutting down...')
                 pygame.quit()
                 sys.exit()
-            counter += 1
-            pygame.display.update()
