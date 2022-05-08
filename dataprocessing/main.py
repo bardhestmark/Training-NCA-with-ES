@@ -6,7 +6,8 @@ import os
 from colorama import Fore
 plt.style.use('seaborn-whitegrid')
 
-dirs = ['..\interactive_CA\logs', '..\\final_models']
+dirs = ['..\interactive_CA\logs', '..\\final_models',
+        'data\\adam\\growing_results\\non_samples']
 logdir = dirs[0]
 eventdirs = [d for d in os.listdir(logdir)]
 
@@ -23,3 +24,4 @@ for dir in eventdirs:
     ax = plt.axes()
     ax.plot(df['step'], df['value'])
     plt.show()
+    # plt.savefig(str(np.random.randint)+'.png')

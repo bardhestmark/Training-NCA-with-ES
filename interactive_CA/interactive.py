@@ -152,34 +152,33 @@ class Interactive:
             cur_path = f'{self.logdir}/{counter}.png'
 
             # Damage at 51:
-            if counter == 40:
+            if counter in [40, 60, 100, 150, 200, 400]:
                 self.save_cell(x_eval, cur_path)
-            elif counter == 51:
-                # record loss before dmg
-                before_loss = self.net.loss(x_eval, self.pad_target)
-                # For lower half:
-                mpos_y = (self.size // 2) + 1
-                mpos_x = 0
-                dmg_size = self.size
-                # damage then save image
-                if self.es:
-                    x_eval[:, mpos_y:mpos_y + dmg_size,
-                           mpos_x:mpos_x + dmg_size, :] = 0
-                else:
-                    x_eval[:, :, mpos_y:mpos_y + dmg_size,
-                           mpos_x:mpos_x + dmg_size] = 0
-                self.save_cell(x_eval, cur_path)
-
-            elif counter == 60:
-                self.save_cell(x_eval, cur_path)
+            # Quadratic erasing
+            # elif counter == 51:
+            #     # record loss before dmg
+            #     before_loss = self.net.loss(x_eval, self.pad_target)
+            #     # For lower half:
+            #     mpos_y = (self.size // 2) + 1
+            #     mpos_x = 0
+            #     dmg_size = self.size
+            #     # damage then save image
+            #     if self.es:
+            #         x_eval[:, mpos_y:mpos_y + dmg_size,
+            #                mpos_x:mpos_x + dmg_size, :] = 0
+            #     else:
+            #         x_eval[:, :, mpos_y:mpos_y + dmg_size,
+            #                mpos_x:mpos_x + dmg_size] = 0
+            #     self.save_cell(x_eval, cur_path)
 
             loss = self.net.loss(x_eval, self.pad_target)
             self.writer.add_scalar("train/fit", loss, counter)
 
-            # find the it that the image was repaired with tol=7 difference
-            if counter > 51 and loss/before_loss <= 7 and not self.isRepaired:
-                self.save_cell(x_eval, cur_path)
-                self.isRepaired = True
+            # find the it that the image was repaired with tol=7 difference FITS together with quadratic erasing
+            # if counter > 51 and loss/before_loss <= 7 and not self.isRepaired:
+            #     self.save_cell(x_eval, cur_path)
+            #     self.isRepaired = True
+
             # # For manual damage:
             # if damaged < 100:
             #     loss = self.net.loss(x_eval, self.pad_target)
@@ -192,7 +191,7 @@ class Interactive:
             # Saving and loading each image as a quick hack to get rid of the batch dimension in tensor
             image = np.asarray(Image.open(self.imgpath))
             self.game_update(surface, image, cellsize)
-            time.sleep(0.05)  # update delay
+            time.sleep(0.00)  # update delay
             if counter == 400:
                 print('Reached 400 iterations. Shutting down...')
                 pygame.quit()
