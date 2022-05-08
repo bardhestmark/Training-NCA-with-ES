@@ -28,10 +28,11 @@ adam_sample_models = [
 ]
 
 es_nonsample_models = [
-    ['final_models\\ES\\NonSamplePools\\9-CARROT-train_05-05-2022_09-14-06\\models\\model_2212000', '🥕', 9, True]
-    ['final_models\\ES\NonSamplePools\\9-RABBIT FACE-train_06-05-2022_12-18-56\models\\model_1998000', '🐰', 9, True]
-    ['final_models\\ES\\NonSamplePools\\15-CARROT-train_06-05-2022_11-06-58\models\model_1998000', '🥕', 15, True]
+    ['final_models\\ES\\NonSamplePools\\9-CARROT-train_05-05-2022_09-14-06\\models\\model_2212000', '🥕', 9, True],
+    ['final_models\\ES\\NonSamplePools\\9-RABBIT FACE-train_06-05-2022_12-18-56\\models\\model_1999000', '🐰', 9, True ],
+    ['final_models\\ES\\NonSamplePools\\15-CARROT-train_06-05-2022_11-06-58\\models\\model_1999000', '🥕', 15, True]
     ['rip_rabbit_15_evolution doth not favour the meek', '🐰', 0, None]
+
 ]
 
 es_sample_models = [
@@ -46,7 +47,7 @@ models = [adam_nonsample_models, adam_sample_models,
 
 if __name__ == '__main__':
     # pick model [Index of model types][index of 9x9 or 15x15 rabbit or carrot]
-    model = models[1][3]  # change only this or size
+    model = models[2][0]  # change only this or size
 
     # Auto determined
     load_model = model[0]
