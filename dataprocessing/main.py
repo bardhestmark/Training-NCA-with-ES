@@ -3,14 +3,27 @@ from utils import convert_tb_data
 import tensorboard as tb
 import matplotlib.pyplot as plt
 import os
+import time
 from colorama import Fore
 plt.style.use('seaborn-whitegrid')
 
-dirs = ['..\interactive_CA\logs', '..\\final_models',
-        'data\\adam\\growing_results\\non_samples']
-logdir = dirs[0]
-eventdirs = [d for d in os.listdir(logdir)]
+dirs = ['data\\growing_results\\samples',
+        'data\\growing_results\\non_samples']
+size = ['9x9', '15x15']
+type_ = ['carrot', 'rabbit']
+colors = ['r','b','g','m','c']
+labels = ['ES', 'Adam']
 
+s = size[0]
+t = type_[0]
+
+logdir = dirs[0]+os.sep+s+os.sep+t
+eventdirs = [d for d in os.listdir(logdir)]
+fig = plt.figure()
+ax = plt.axes()
+ax.set_title(f'{s} {t}')
+ax.set_xlabel('Iterations')
+ax.set_ylabel(r'log$_1$$_0$(loss)')
 for dir in eventdirs:
     path = f"{logdir}/{dir}"
 
@@ -20,8 +33,8 @@ for dir in eventdirs:
         print(Fore.RED+f'A directory does not include a tensorboard file:{ve}')
         Fore.WHITE
 
-    fig = plt.figure()
-    ax = plt.axes()
-    ax.plot(df['step'], df['value'])
-    plt.show()
-    # plt.savefig(str(np.random.randint)+'.png')
+    ax.plot(df['step'], df['value'],color=colors.pop(), label=labels.pop())
+
+#plt.show()
+plt.legend()
+plt.savefig(f'graphs/{s}-{t}_{time.time()}.png')
