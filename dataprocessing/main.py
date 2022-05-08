@@ -39,7 +39,7 @@ def graph(s, t, d):
 
 
 def main():
-    dir = dirs[0]
+    dir = dirs[1]
     for s in size:
         for t in type_:
             graph(s,t,dir)
