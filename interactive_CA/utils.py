@@ -40,37 +40,13 @@ def to_rgba(x):
     """Return the four first channels (RGBA) of an image."""
     return x[..., :4]
 
-def save_model(ca, base_fn):
-    """Save a PyTorch model to a specific path."""
-    torch.save(ca.state_dict(), base_fn)
+def make_seed(size, n_channels):
+    x = torch.zeros((1, n_channels, size, size), dtype=torch.float32)
+    x[:, 3:, size // 2, size // 2] = 1
+    return x
 
-def visualize(xs, step_i, nrow=1):
-    """Save a batch of multiple x's to file"""
-    for i in range(len(xs)):
-        xs[i] = to_rgb(xs[i]).permute(0, 3, 1, 2)
-    save_image(torch.cat(xs, dim=0), './logg/pic/p%04d.png' % step_i, nrow=nrow, padding=0)
-
-class Pool:
-    """Class for storing and providing samples of different stages of growth."""
-    def __init__(self, seed, size):
-        self.size = size
-        self.slots = np.repeat([seed], size, 0)
-        self.seed = seed
-
-    def commit(self, batch):
-        """Replace existing slots with a batch."""
-        indices = batch["indices"]
-        for i, x in enumerate(batch["x"]):
-            if (x[:, :, 3] > 0.1).any():  # Avoid committing dead image
-                self.slots[indices[i]] = x.copy()
-
-    def sample(self, c):
-        """Retrieve a batch from the pool."""
-        indices = np.random.choice(self.size, c, False)
-        batch = {
-            "indices": indices,
-            "x": self.slots[indices]
-        }
-        return batch
+def to_rgb_ad(img_rgba):
+    rgb, a = img_rgba[:, :3, ...], torch.clamp(img_rgba[:, 3:, ...], 0, 1)
+    return torch.clamp(1.0 - a + rgb, 0, 1)
 
     
