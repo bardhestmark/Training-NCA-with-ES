@@ -12,19 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import save_image
 
 from model import CAModel, CellularAutomataModel
-from utils import load_emoji, to_rgb, adv_attack
-
-
-def make_seed(size, n_channels):
-    x = torch.zeros((1, n_channels, size, size), dtype=torch.float32)
-    x[:, 3:, size // 2, size // 2] = 1
-    return x
-
-
-def to_rgb_ad(img_rgba):
-    rgb, a = img_rgba[:, :3, ...], torch.clamp(img_rgba[:, 3:, ...], 0, 1)
-    return torch.clamp(1.0 - a + rgb, 0, 1)
-
+from utils import load_emoji, to_rgb, adv_attack, make_seed, to_rgb_ad
 
 class Interactive:
     def __init__(self, args):
@@ -94,9 +82,9 @@ class Interactive:
             image = to_rgb_ad(x[:, :4].detach().cpu())
         save_image(image, path, nrow=1, padding=0)
 
-    # Do damage on model using pygame, cannot run through ssh
 
     def interactive(self):
+        """Do damage on model using pygame"""
         x_eval = self.seedclone()
 
         cellsize = 20
