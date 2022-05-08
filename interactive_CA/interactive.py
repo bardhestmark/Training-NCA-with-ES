@@ -142,7 +142,7 @@ class Interactive:
             self.save_cell(x_eval, self.imgpath)
             cur_path = f'{self.logdir}/{counter}.png'
 
-            if counter < 40:
+            if counter == 51:
                 # For noise:
                 e = x_eval.clone().detach().cpu()
                 e.requires_grad = True
@@ -192,7 +192,7 @@ class Interactive:
             time.sleep(0.00)  # update delay
             counter += 1
             pygame.display.update()
-            if counter == 400:
+            if counter == 1000:
                 print('Reached 400 iterations. Shutting down...')
                 pygame.quit()
                 sys.exit()
