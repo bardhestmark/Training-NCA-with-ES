@@ -28,7 +28,10 @@ adam_sample_models = [
 ]
 
 es_nonsample_models = [
-    ['final_models\\ES\\NonSamplePools\\9-CARROT-train_05-05-2022_09-14-06\\models\\model_2212000', '🥕', 9, True]
+    ['final_models\\ES\\NonSamplePools\\9-CARROT-train_05-05-2022_09-14-06\\models\\model_2212000', '🥕', 9, True],
+    ['final_models\\ES\NonSamplePools\\9-RABBIT FACE-train_06-05-2022_12-18-56\\models\\model_1999000', '🐰', 9, True ],
+    ['final_models\\ES\NonSamplePools\\15-CARROT-train_06-05-2022_11-06-58\\models\\model_1999000', '🥕', 15, True]
+
 ]
 
 es_sample_models = [
