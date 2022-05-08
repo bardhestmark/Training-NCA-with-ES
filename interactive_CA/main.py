@@ -74,7 +74,7 @@ if __name__ == '__main__':
                         metavar=0.5, help="Cell fire rate")
     parser.add_argument("-e", "--es", type=str, default='',
                         metavar=True, help="ES or adam")
-    parser.add_argument("--eps", type=float, default=0.007,
+    parser.add_argument("--eps", type=float, default=0.00007,
                         help="Epsilon scales the amount of damage done from adversarial attacks")
 
     args = parser.parse_args()
