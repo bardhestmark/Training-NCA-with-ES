@@ -142,16 +142,17 @@ class Interactive:
             self.save_cell(x_eval, self.imgpath)
             cur_path = f'{self.logdir}/{counter}.png'
 
-            if counter == 51:
-                # For noise:
-                e = x_eval.clone().detach().cpu()
-                e.requires_grad = True
-                l = self.l_func(e, self.batch_target)
-                self.net.zero_grad()
-                l.backward()
-                x_eval = adv_attack(x_eval, self.eps, e.grad.data)
-            if counter in [40, 60, 100, 150, 200, 400]:
-                self.save_cell(x_eval, cur_path)
+            # if counter < 40:
+            #     # For noise:
+            #     e = x_eval.clone().detach().cpu()
+            #     e.requires_grad = True
+            #     l = self.l_func(e, self.batch_target)
+            #     self.net.zero_grad()
+            #     l.backward()
+            #     x_eval = adv_attack(x_eval, self.eps, e.grad.data)
+            # if counter in [40, 60, 100, 150, 200, 400]:
+            #     self.save_cell(x_eval, cur_path)
+
             # Quadratic erasing at 51
             # if counter == 51:
             #     # record loss before dmg
@@ -168,6 +169,21 @@ class Interactive:
             #         x_eval[:, :, mpos_y:mpos_y + dmg_size,
             #                mpos_x:mpos_x + dmg_size] = 0
             #     self.save_cell(x_eval, cur_path)
+
+            # damage x by x in middle of image:
+            if counter == 51:
+                dmg_size = 3
+                mpos_y = (self.size // 2) - 1
+                mpos_x = (self.size // 2) - 1
+                # damage then save image
+                if self.es:
+                    x_eval[:, mpos_y:mpos_y + dmg_size,
+                           mpos_x:mpos_x + dmg_size, :] = 0
+                else:
+                    x_eval[:, :, mpos_y:mpos_y + dmg_size,
+                           mpos_x:mpos_x + dmg_size] = 0
+                self.save_cell(x_eval, cur_path)
+
 
             loss = self.net.loss(x_eval, self.pad_target)
             self.writer.add_scalar("train/fit", loss, counter)
@@ -189,7 +205,7 @@ class Interactive:
             # Saving and loading each image as a quick hack to get rid of the batch dimension in tensor
             image = np.asarray(Image.open(self.imgpath))
             self.game_update(surface, image, cellsize)
-            time.sleep(0.00)  # update delay
+            # time.sleep(0.005)  # update delay
             counter += 1
             pygame.display.update()
             if counter == 1000:
