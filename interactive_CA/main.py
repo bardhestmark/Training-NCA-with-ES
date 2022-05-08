@@ -46,7 +46,7 @@ models = [adam_nonsample_models, adam_sample_models,
 
 if __name__ == '__main__':
     # pick model [Index of model types][index of 9x9 or 15x15 rabbit or carrot]
-    model = models[1][2]  # change only this or size
+    model = models[0][0]  # change only this or size
 
     # Auto determined
     load_model = model[0]
@@ -74,7 +74,7 @@ if __name__ == '__main__':
                         metavar=0.5, help="Cell fire rate")
     parser.add_argument("--es", type=bool, default=es,
                         metavar=True, help="ES or adam")
-    parser.add_argument("--eps", type=float, default=0.007,
+    parser.add_argument("--eps", type=float, default=0.00007,
                         help="Epsilon scales the amount of damage done from adversarial attacks")
 
     args = parser.parse_args()
