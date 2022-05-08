@@ -172,9 +172,9 @@ class Interactive:
 
             # damage x by x in middle of image:
             if counter == 51:
-                dmg_size = 2
-                mpos_y = (self.size // 2)
-                mpos_x = (self.size // 2)
+                dmg_size = 3
+                mpos_y = (self.size // 2) - 1
+                mpos_x = (self.size // 2) - 1
                 # damage then save image
                 if self.es:
                     x_eval[:, mpos_y:mpos_y + dmg_size,
@@ -205,7 +205,7 @@ class Interactive:
             # Saving and loading each image as a quick hack to get rid of the batch dimension in tensor
             image = np.asarray(Image.open(self.imgpath))
             self.game_update(surface, image, cellsize)
-            time.sleep(0.005)  # update delay
+            # time.sleep(0.005)  # update delay
             counter += 1
             pygame.display.update()
             if counter == 400:
