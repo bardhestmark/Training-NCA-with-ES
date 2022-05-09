@@ -212,3 +212,22 @@ class Interactive:
                 print('Reached 400 iterations. Shutting down...')
                 pygame.quit()
                 sys.exit()
+
+
+    def generate_graphic(self):
+        model = self.net
+        x_eval = self.seedclone()
+        pics = []
+        pics.append(to_rgb(x_eval).permute(0, 3, 1, 2))
+
+        for eval in range(40):
+            x_eval = model(x_eval)
+            if eval in [4, 9, 20, 39]: # frames to save img of
+                if self.es:
+                    image = to_rgb(x_eval).permute(0, 3, 1, 2)
+                else:
+                    image = to_rgb_ad(x_eval[:, :4].detach().cpu())
+                pics.append(image)
+
+        save_image(torch.cat(pics, dim=0), '%s/graphic.png' % (self.logdir), nrow=len(pics), padding=0)
+        

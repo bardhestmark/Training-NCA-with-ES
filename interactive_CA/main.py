@@ -54,7 +54,7 @@ if __name__ == '__main__':
             "Logging directory '%s' not found in base folder" % args.logdir)
 
     match args.es:
-        case 'True': 
+        case 'True': #heh
             method = 'ES'
             args.es = True
         case 'False': 
@@ -76,3 +76,4 @@ if __name__ == '__main__':
     Interactive = Interactive(args)
 
     Interactive.interactive()
+    # Interactive.generate_graphic_es()
