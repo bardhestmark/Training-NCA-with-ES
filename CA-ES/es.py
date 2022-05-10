@@ -1,7 +1,6 @@
 import copy
 import math
 from tqdm import trange
-import multiprocessing as mp
 
 import numpy as np
 import torch
@@ -226,21 +225,4 @@ class ES:
                 self.writer.add_scalar("growth_loss/200", growth_loss[1], iteration)
                 save_image(torch.cat(pics, dim=0), '%s/pic/big%04d.png' % (self.logdir, iteration), nrow=1, padding=0)
                 save_model(self.net, self.logdir + "/models/model_" + str(iteration))
-  
-            # if mean_fit > -0.003: 
-            #     logging.info("Training goal reached, exiting")
-            #     break
 
-    def generate_graphic(self):
-        model = self.net
-        x_eval = tt(np.repeat(self.seed[None, ...], self.batch_size, 0))
-        pics = []
-        pics.append(to_rgb(x_eval).permute(0, 3, 1, 2))
-
-        for eval in range(40):
-            x_eval = model(x_eval)
-            if eval in [10, 20, 30, 39]: # frames to save img of
-                pics.append(to_rgb(x_eval).permute(0, 3, 1, 2))
-
-        save_image(torch.cat(pics, dim=0), '%s/graphic.png' % (self.logdir), nrow=len(pics), padding=0)
-        
