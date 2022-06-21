@@ -1,0 +1,13 @@
+INFO:root:
+Arguments:
+img: '🦎'
+size: 40
+logdir: 'interactive_CA/logs/40-ES-LIZARD_13-05-2022_13-09-45'
+load_model_path: 'model_577000'
+n_channels: 16
+hidden_size: 128
+fire_rate: 0.5
+es: True
+eps: 0.007
+emoji_size: 40
+
