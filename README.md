@@ -2,6 +2,8 @@
 
 Main repository for bachelor thesis
 
+[Thesis available here](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3004159)
+
 There are subprojects within this project, notably:
 
 - Automata_ex - Training an NCA with Adam
